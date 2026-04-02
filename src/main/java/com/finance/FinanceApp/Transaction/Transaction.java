@@ -38,8 +38,4 @@ public class Transaction {
     public LocalDateTime getDate() {
         return date;
     }
-
-    public boolean hasValidAmount() {
-        return amount != null && amount.compareTo(BigDecimal.ZERO) > 0;
-    }
 }
