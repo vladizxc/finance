@@ -22,6 +22,7 @@ public class TransactionTests {
         assertEquals("Test transaction", t.getTitle());
         assertEquals(amount, t.getAmount());
         assertEquals(now, t.getDate());
+        assertEquals(c, t.getCategory());
     }
 
     @Test
