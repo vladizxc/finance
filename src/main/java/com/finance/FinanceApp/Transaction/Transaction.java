@@ -1,10 +1,9 @@
 package com.finance.FinanceApp.Transaction;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.finance.FinanceApp.Category.Category;
+import jakarta.persistence.*;
 
+import javax.smartcardio.CardTerminal;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,15 +17,22 @@ public class Transaction {
     private BigDecimal amount;
     private LocalDateTime date;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
     public Transaction(){}
 
-    public Transaction(String title, BigDecimal amount, LocalDateTime date){
+    public Transaction(String title, BigDecimal amount, LocalDateTime date, Category category){
         if(title == null || title.isBlank()) throw new IllegalArgumentException("Title must have name");
         if(amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("Amount must be positive");
         if(date == null) throw new NullPointerException("Date cannot be null");
+        if (category == null)
+            throw new IllegalArgumentException("Category cannot be null");
         this.title = title;
         this.amount = amount;
         this.date = date;
+        this.category = category;
     }
 
     public long getId(){
@@ -45,6 +51,10 @@ public class Transaction {
         return date;
     }
 
+    public Category getCategory() {
+        return category;
+    }
+
     public void setTitle(String title){
         if(title == null || title.isBlank()) throw new IllegalArgumentException("Title must have name");
         this.title = title;
@@ -58,5 +68,11 @@ public class Transaction {
     public void setDate(LocalDateTime date){
         if(date == null) throw new NullPointerException("Date cannot be null");
         this.date = date;
+    }
+
+    public void setCategory(Category category) {
+        if (category == null)
+            throw new IllegalArgumentException("Category cannot be null");
+        this.category = category;
     }
 }
