@@ -489,4 +489,49 @@ public class TransactionServiceTest {
         BigDecimal balance = service.getBalance();
         assertEquals(BigDecimal.ZERO, balance);
     }
+
+    @Test
+    void getTransactionsByDateRangeInvalidStartOrEnd(){
+        TransactionService service = new TransactionService(transactionRepository);
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = LocalDateTime.now().plusHours(2);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getTransactionsByDateRange(null,end));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getTransactionsByDateRange(start, null));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getTransactionsByDateRange(end, start));
+    }
+
+    @Test
+    void getTransactionsByDateRangeTest() {
+        TransactionService service = new TransactionService(transactionRepository);
+        LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, 1, 31, 23, 59);
+
+        service.getTransactionsByDateRange(start, end);
+
+        verify(transactionRepository).findByDateBetween(start, end);
+    }
+
+    @Test
+    void getTransactionsByTypeTest() {
+        TransactionService service = new TransactionService(transactionRepository);
+        CategoryType type = CategoryType.INCOME;
+
+        service.getTransactionsByType(type);
+
+        verify(transactionRepository).findByCategory_Type(type);
+    }
+
+    @Test
+    void getTransactionsByTypeThrowsTest() {
+        TransactionService service = new TransactionService(transactionRepository);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getTransactionsByType(null));
+    }
 }

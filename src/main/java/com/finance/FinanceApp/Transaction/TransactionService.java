@@ -145,4 +145,19 @@ public class TransactionService {
         }
         return balance;
     }
+
+    public List<Transaction> getTransactionsByDateRange(LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null)
+            throw new IllegalArgumentException("Start and end dates cannot be null");
+        if (end.isBefore(start))
+            throw new IllegalArgumentException("End date cannot be before start date");
+
+        return transactionRepository.findByDateBetween(start, end);
+    }
+
+    public List<Transaction> getTransactionsByType(CategoryType type){
+        if (type == null)
+            throw new IllegalArgumentException("Type cannot be null");
+        return transactionRepository.findByCategory_Type(type);
+    }
 }
