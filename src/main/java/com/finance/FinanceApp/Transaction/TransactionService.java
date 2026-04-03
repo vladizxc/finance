@@ -1,6 +1,7 @@
 package com.finance.FinanceApp.Transaction;
 
 import com.finance.FinanceApp.Category.Category;
+import com.finance.FinanceApp.Category.CategoryType;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -83,5 +84,24 @@ public class TransactionService {
     public List<Transaction> getTransactionsByCategory(Long categoryId){
         if(categoryId == null || categoryId < 0) throw new IllegalArgumentException();
         return transactionRepository.findByCategory_Id(categoryId);
+    }
+
+    public BigDecimal getBalance() {
+        BigDecimal balance = BigDecimal.ZERO;
+
+        List<Transaction> transactions = this.getAllTransactions();
+
+        for (Transaction t : transactions) {
+
+            CategoryType type = t.getCategory().getType();
+
+            if (type == CategoryType.INCOME) {
+                balance = balance.add(t.getAmount());
+            } else {
+                balance = balance.subtract(t.getAmount());
+            }
+        }
+
+        return balance;
     }
 }

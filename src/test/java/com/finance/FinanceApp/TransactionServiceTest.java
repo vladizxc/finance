@@ -1,6 +1,7 @@
 package com.finance.FinanceApp;
 
 import com.finance.FinanceApp.Category.Category;
+import com.finance.FinanceApp.Category.CategoryType;
 import com.finance.FinanceApp.Transaction.Transaction;
 import com.finance.FinanceApp.Transaction.TransactionRepository;
 import com.finance.FinanceApp.Transaction.TransactionService;
@@ -12,6 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -327,4 +330,57 @@ public class TransactionServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> service.getTransactionsByCategory(-1L));
     }
+
+    @Test
+    void getBalanceWithIncomeAndExpense(){
+        TransactionService service = new TransactionService(transactionRepository);
+
+        Category incomeCategory = new Category("Salary", CategoryType.INCOME);
+        Category expenseCategory = new Category("Food", CategoryType.EXPENSE);
+
+
+        Transaction t1 = new Transaction("Salary Payment", new BigDecimal("1000"), LocalDateTime.now(), incomeCategory);
+        Transaction t2 = new Transaction("Groceries", new BigDecimal("200"), LocalDateTime.now(), expenseCategory);
+
+        when(transactionRepository.findAll()).thenReturn(Arrays.asList(t1, t2));
+
+        BigDecimal balance = service.getBalance();
+        assertEquals(new BigDecimal("800"), balance);
+    }
+
+    @Test
+    void getBalanceOnlyIncome() {
+        TransactionService service = new TransactionService(transactionRepository);
+
+        Category incomeCategory = new Category("Salary", CategoryType.INCOME);
+        Transaction t1 = new Transaction("Salary Payment", new BigDecimal("500"), LocalDateTime.now(), incomeCategory);
+
+        when(transactionRepository.findAll()).thenReturn(Collections.singletonList(t1));
+
+        BigDecimal balance = service.getBalance();
+        assertEquals(new BigDecimal("500"), balance);
+    }
+
+    @Test
+    void getBalanceOnlyExpense() {
+        TransactionService service = new TransactionService(transactionRepository);
+        Category expenseCategory = new Category("Rent", CategoryType.EXPENSE);
+        Transaction t1 = new Transaction("Rent Payment", new BigDecimal("300"), LocalDateTime.now(), expenseCategory);
+
+        when(transactionRepository.findAll()).thenReturn(Collections.singletonList(t1));
+
+        BigDecimal balance = service.getBalance();
+        assertEquals(new BigDecimal("-300"), balance);
+    }
+
+    @Test
+    void getBalanceEmptyList() {
+        TransactionService service = new TransactionService(transactionRepository);
+
+        when(transactionRepository.findAll()).thenReturn(Collections.emptyList());
+
+        BigDecimal balance = service.getBalance();
+        assertEquals(BigDecimal.ZERO, balance);
+    }
+
 }
