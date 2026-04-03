@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class TransactionService {
@@ -23,5 +25,27 @@ public class TransactionService {
             throw new IllegalArgumentException("Category cannot be null");
         Transaction transaction = new Transaction(title, amount, date, category);
         transactionRepository.save(transaction);
+    }
+
+    public List<Transaction> getAllTransactions(){
+        return transactionRepository.findAll();
+    }
+
+    public Transaction getTransactionById(Long id){
+        if (id == null || id < 0)
+            throw new IllegalArgumentException("Id cannot be negative");
+
+        return transactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+    }
+
+    public void deleteTransaction(Long id){
+        if (id == null || id < 0)
+            throw new IllegalArgumentException("Id cannot be negative");
+
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        transactionRepository.delete(transaction);
     }
 }
