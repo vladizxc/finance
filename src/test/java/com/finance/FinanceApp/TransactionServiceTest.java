@@ -179,5 +179,135 @@ public class TransactionServiceTest {
                 () -> service.deleteTransaction(null));
     }
 
+    @Test
+    void updateTransactionShouldUpdateOnlyTitle() {
+        LocalDateTime now = LocalDateTime.now();
+        Category category = new Category();
+        Long id = 1L;
+        Transaction existing = new Transaction("Old", new BigDecimal("100"), now, category);
 
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.of(existing));
+
+        TransactionService service = new TransactionService(transactionRepository);
+
+        service.updateTransaction(id, "New", null, null, null);
+
+        assertEquals("New", existing.getTitle());
+        assertEquals(new BigDecimal("100"), existing.getAmount()); // не изменился
+
+        verify(transactionRepository).save(existing);
+    }
+
+    @Test
+    void updateTransactionShouldUpdateOnlyAmount() {
+        LocalDateTime now = LocalDateTime.now();
+        Category category = new Category();
+        Long id = 1L;
+        Transaction existing = new Transaction("Title", new BigDecimal("100"), now, category);
+
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.of(existing));
+
+        TransactionService service = new TransactionService(transactionRepository);
+
+        service.updateTransaction(id, null, new BigDecimal("110"), null, null);
+
+        assertEquals("Title", existing.getTitle()); // не изменился
+        assertEquals(new BigDecimal("110"), existing.getAmount());
+
+        verify(transactionRepository).save(existing);
+    }
+
+    @Test
+    void updateTransactionShouldUpdateOnlyDate() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime newDate = LocalDateTime.now().minusHours(2);
+        Category category = new Category();
+        Long id = 1L;
+        Transaction existing = new Transaction("Title", new BigDecimal("100"), now, category);
+
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.of(existing));
+
+        TransactionService service = new TransactionService(transactionRepository);
+
+        service.updateTransaction(id, " ", null, newDate, null);
+
+        assertEquals("Title", existing.getTitle()); // не изменился
+        assertEquals(newDate, existing.getDate());
+
+        verify(transactionRepository).save(existing);
+    }
+
+    @Test
+    void updateTransactionShouldUpdateOnlyCategory() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime newDate = LocalDateTime.now().minusHours(2);
+        Category category = new Category();
+        Category newCategory = new Category();
+        Long id = 1L;
+        Transaction existing = new Transaction("Title", new BigDecimal("100"), now, category);
+
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.of(existing));
+
+        TransactionService service = new TransactionService(transactionRepository);
+
+        service.updateTransaction(id, null, new BigDecimal("-1"), null, newCategory);
+
+        assertEquals("Title", existing.getTitle()); // не изменился
+        assertEquals(new BigDecimal("100"), existing.getAmount()); // не изменился
+        assertEquals(newCategory, existing.getCategory());
+
+        verify(transactionRepository).save(existing);
+    }
+
+    @Test
+    void updateTransactionNotUpdateOnAllNull(){
+        LocalDateTime now = LocalDateTime.now();
+        Category category = new Category();
+        Long id = 1L;
+        Transaction existing = new Transaction("Title", new BigDecimal("100"), now, category);
+
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.of(existing));
+
+        TransactionService service = new TransactionService(transactionRepository);
+
+        service.updateTransaction(id, null, null, null, null);
+
+        assertEquals("Title", existing.getTitle()); // не изменился
+        assertEquals(new BigDecimal("100"), existing.getAmount());
+        assertEquals(now, existing.getDate());
+        assertEquals(category, existing.getCategory());
+
+        verify(transactionRepository).save(existing);
+    }
+
+    @Test
+    void updateTransitionShouldThrowOnInvalidId() {
+        TransactionService service = new TransactionService(transactionRepository);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateTransaction(-1L,null, null, null, null));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateTransaction(null,null, null, null, null));
+    }
+
+    @Test
+    void updateTransactionShouldThrowWhenNotFound() {
+        Long id = 1L;
+
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.empty());
+
+        TransactionService service = new TransactionService(transactionRepository);
+
+        assertThrows(RuntimeException.class,
+                () -> service.updateTransaction(id, null, null, null, null));
+
+        verify(transactionRepository, never()).save(any());
+    }
 }

@@ -48,4 +48,36 @@ public class TransactionService {
 
         transactionRepository.delete(transaction);
     }
+
+    public Transaction updateTransaction(
+            Long id,
+            String title,
+            BigDecimal amount,
+            LocalDateTime date,
+            Category category
+    ) {
+        if (id == null || id < 0)
+            throw new IllegalArgumentException("Invalid id");
+
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        if (title != null && !title.isBlank()) {
+            transaction.setTitle(title);
+        }
+
+        if (amount != null && amount.compareTo(BigDecimal.ZERO) > 0) {
+            transaction.setAmount(amount);
+        }
+
+        if (date != null) {
+            transaction.setDate(date);
+        }
+
+        if (category != null) {
+            transaction.setCategory(category);
+        }
+
+        return transactionRepository.save(transaction);
+    }
 }
