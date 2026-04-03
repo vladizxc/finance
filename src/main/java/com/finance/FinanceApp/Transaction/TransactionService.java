@@ -130,4 +130,19 @@ public class TransactionService {
         }
         return expense;
     }
+
+    public BigDecimal getBalanceByCategory(Long categoryId){
+        BigDecimal balance = BigDecimal.ZERO;
+
+        List<Transaction> transactions = this.getTransactionsByCategory(categoryId);
+        for(Transaction t : transactions){
+            CategoryType type = t.getCategory().getType();
+            if (type == CategoryType.INCOME) {
+                balance = balance.add(t.getAmount());
+            } else {
+                balance = balance.subtract(t.getAmount());
+            }
+        }
+        return balance;
+    }
 }

@@ -429,4 +429,64 @@ public class TransactionServiceTest {
         assertEquals(BigDecimal.ZERO, expense);
     }
 
+    @Test
+    void getBalanceByCategoryTest(){
+        TransactionService service = new TransactionService(transactionRepository);
+        // Мокаем категорию
+        Category incomeCategory = mock(Category.class);
+        when(incomeCategory.getType()).thenReturn(CategoryType.INCOME);
+        //when(incomeCategory.getId()).thenReturn(1L);
+
+        Category expenseCategory = mock(Category.class);
+        when(expenseCategory.getType()).thenReturn(CategoryType.EXPENSE);
+        //when(expenseCategory.getId()).thenReturn(1L);
+
+        Transaction t1 = new Transaction("Salary", new BigDecimal("1000"), LocalDateTime.now(), incomeCategory);
+        Transaction t2 = new Transaction("Lunch", new BigDecimal("200"), LocalDateTime.now(), expenseCategory);
+
+        when(transactionRepository.findByCategory_Id(1L)).thenReturn(Arrays.asList(t1, t2));
+
+        BigDecimal balance = service.getBalanceByCategory(1L);
+        assertEquals(new BigDecimal("800"), balance);
+    }
+
+    @Test
+    void getBalanceByCategoryOnlyIncome(){
+        TransactionService service = new TransactionService(transactionRepository);
+        // Мокаем категорию
+        Category incomeCategory = mock(Category.class);
+        when(incomeCategory.getType()).thenReturn(CategoryType.INCOME);
+
+        Transaction t1 = new Transaction("Salary", new BigDecimal("1000"), LocalDateTime.now(), incomeCategory);
+
+        when(transactionRepository.findByCategory_Id(1L)).thenReturn(Collections.singletonList(t1));
+        BigDecimal balance = service.getBalanceByCategory(1L);
+        assertEquals(new BigDecimal("1000"), balance);
+
+    }
+
+    @Test
+    void getBalanceByCategoryOnlyExpense(){
+        TransactionService service = new TransactionService(transactionRepository);
+
+        Category expenseCategory = mock(Category.class);
+        when(expenseCategory.getType()).thenReturn(CategoryType.EXPENSE);
+
+        Transaction t2 = new Transaction("Lunch", new BigDecimal("200"), LocalDateTime.now(), expenseCategory);
+
+        when(transactionRepository.findByCategory_Id(1L)).thenReturn(Collections.singletonList(t2));
+
+        BigDecimal balance = service.getBalanceByCategory(1L);
+        assertEquals(new BigDecimal("-200"), balance);
+    }
+
+    @Test
+    void getBalanceByCategoryEmptyList(){
+        TransactionService service = new TransactionService(transactionRepository);
+
+        lenient().when(transactionRepository.findByCategory_Id(1L)).thenReturn(Collections.emptyList());
+
+        BigDecimal balance = service.getBalance();
+        assertEquals(BigDecimal.ZERO, balance);
+    }
 }
