@@ -383,4 +383,50 @@ public class TransactionServiceTest {
         assertEquals(BigDecimal.ZERO, balance);
     }
 
+    @Test
+    void getTotalIncomeTest(){
+        TransactionService service = new TransactionService(transactionRepository);
+
+        Category incomeCategory = new Category("Salary", CategoryType.INCOME);
+        Transaction t1 = new Transaction("Salary Payment", new BigDecimal("500"), LocalDateTime.now(), incomeCategory);
+
+        when(transactionRepository.findAll()).thenReturn(Collections.singletonList(t1));
+
+        BigDecimal income = service.getTotalIncome();
+        assertEquals(new BigDecimal("500"), income);
+    }
+
+    @Test
+    void getTotalIncomeEmptyList() {
+        TransactionService service = new TransactionService(transactionRepository);
+
+        when(transactionRepository.findAll()).thenReturn(Collections.emptyList());
+
+        BigDecimal income = service.getBalance();
+        assertEquals(BigDecimal.ZERO, income);
+    }
+
+    @Test
+    void getTotalExpenseTest() {
+        TransactionService service = new TransactionService(transactionRepository);
+
+        Category expenseCategory = new Category("Rent", CategoryType.EXPENSE);
+        Transaction t1 = new Transaction("Rent Payment", new BigDecimal("500"), LocalDateTime.now(), expenseCategory);
+
+        when(transactionRepository.findAll()).thenReturn(Collections.singletonList(t1));
+
+        BigDecimal expense = service.getTotalExpense();
+        assertEquals(new BigDecimal("500"), expense);
+    }
+
+    @Test
+    void getTotalExpenseEmptyList() {
+        TransactionService service = new TransactionService(transactionRepository);
+
+        when(transactionRepository.findAll()).thenReturn(Collections.emptyList());
+
+        BigDecimal expense = service.getBalance();
+        assertEquals(BigDecimal.ZERO, expense);
+    }
+
 }

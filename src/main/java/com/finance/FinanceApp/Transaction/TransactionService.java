@@ -104,4 +104,30 @@ public class TransactionService {
 
         return balance;
     }
+
+    public BigDecimal getTotalIncome(){
+        BigDecimal income = BigDecimal.ZERO;
+
+        List<Transaction> transactions = this.getAllTransactions();
+        for(Transaction t : transactions){
+            CategoryType type = t.getCategory().getType();
+            if(type == CategoryType.INCOME){
+                income = income.add(t.getAmount());
+            }
+        }
+        return income;
+    }
+
+    public BigDecimal getTotalExpense(){
+        BigDecimal expense = BigDecimal.ZERO;
+
+        List<Transaction> transactions = this.getAllTransactions();
+        for(Transaction t : transactions){
+            CategoryType type = t.getCategory().getType();
+            if(type == CategoryType.EXPENSE){
+                expense = expense.add(t.getAmount());
+            }
+        }
+        return expense;
+    }
 }
