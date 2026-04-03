@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -79,5 +78,10 @@ public class TransactionService {
         }
 
         return transactionRepository.save(transaction);
+    }
+
+    public List<Transaction> getTransactionsByCategory(Long categoryId){
+        if(categoryId == null || categoryId < 0) throw new IllegalArgumentException();
+        return transactionRepository.findByCategory_Id(categoryId);
     }
 }

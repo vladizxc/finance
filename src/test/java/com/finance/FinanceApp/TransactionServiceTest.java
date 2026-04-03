@@ -310,4 +310,21 @@ public class TransactionServiceTest {
 
         verify(transactionRepository, never()).save(any());
     }
+
+    @Test
+    void getTransactionsByCategoryTest(){
+        TransactionService service = new TransactionService(transactionRepository);
+        Long categoryId = 1L;
+        List<Transaction> allTransactions = service.getTransactionsByCategory(categoryId);
+        verify(transactionRepository).findByCategory_Id(categoryId);
+    }
+
+    @Test
+    void getTransactionsByCategoryThrowsTest(){
+        TransactionService service = new TransactionService(transactionRepository);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getTransactionsByCategory(null));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getTransactionsByCategory(-1L));
+    }
 }
