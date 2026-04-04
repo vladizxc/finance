@@ -4,6 +4,7 @@ import com.finance.FinanceApp.Transaction.TransactionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class CategoryService {
@@ -66,5 +67,17 @@ public class CategoryService {
             category.setType(type);
         }
         return categoryRepository.save(category);
+    }
+
+    public void deleteCategory(Long id){
+        if(id == null || id < 0){
+            throw new IllegalArgumentException("Id cannot be null or negative");
+        }
+        Category category = categoryRepository.findById(id).
+                orElseThrow(()-> new NoSuchElementException("Category not found"));
+        if(transactionRepository.existsByCategory_Id(id)){
+            throw new IllegalArgumentException("Cannot delete because there are Transactions");
+        }
+        categoryRepository.deleteById(id);
     }
 }

@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -229,5 +230,49 @@ public class CategoryServiceTest {
         verify(categoryRepository, never()).save(any());
     }
 
+    @Test
+    void deleteCategoryInvalidId(){
+        CategoryService service = new CategoryService(categoryRepository, transactionRepository);
 
+        assertThrows(IllegalArgumentException.class,
+                () -> service.deleteCategory(null));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.deleteCategory(-1L));
+    }
+
+    @Test
+    void deleteCategoryShouldThrowWhenNotFound(){
+        CategoryService service = new CategoryService(categoryRepository, transactionRepository);
+        Long id = 1L;
+        when(categoryRepository.findById(id)).thenReturn(Optional.empty());
+        assertThrows(NoSuchElementException.class,
+                ()-> service.deleteCategory(id));
+        verify(categoryRepository, never()).deleteById(id);
+    }
+
+    @Test
+    void deleteCategoryShouldThrowWhenTransactions(){
+        CategoryService service = new CategoryService(categoryRepository, transactionRepository);
+        CategoryType type = CategoryType.INCOME;
+        Long id = 1L;
+        Category category = new Category("Test", type);
+        when(categoryRepository.findById(id)).thenReturn(Optional.of(category));
+        when(transactionRepository.existsByCategory_Id(id)).thenReturn(true);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.deleteCategory(id));
+        verify(categoryRepository, never()).deleteById(id);
+    }
+
+    @Test
+    void deleteCategoryValid(){
+        CategoryService service = new CategoryService(categoryRepository, transactionRepository);
+        CategoryType type = CategoryType.INCOME;
+        Long id = 1L;
+        Category category = new Category("Test", type);
+        when(categoryRepository.findById(id)).thenReturn(Optional.of(category));
+        when(transactionRepository.existsByCategory_Id(id)).thenReturn(false);
+        service.deleteCategory(id);
+        verify(categoryRepository).deleteById(id);
+    }
 }
