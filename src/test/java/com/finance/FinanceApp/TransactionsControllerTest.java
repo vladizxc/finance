@@ -1,5 +1,6 @@
 package com.finance.FinanceApp;
 
+import com.finance.FinanceApp.Category.CategoryRepository;
 import com.finance.FinanceApp.Transaction.Transaction;
 import com.finance.FinanceApp.Transaction.TransactionRepository;
 import com.finance.FinanceApp.Transaction.TransactionService;
@@ -21,11 +22,14 @@ public class TransactionsControllerTest {
     @Mock
     TransactionRepository transactionRepository;
 
+    @Mock
+    CategoryRepository categoryRepository;
+
     TransactionService service;
 
     @BeforeEach
     void init(){
-        service = new TransactionService(transactionRepository);
+        service = new TransactionService(transactionRepository, categoryRepository);
     }
 
     @Test

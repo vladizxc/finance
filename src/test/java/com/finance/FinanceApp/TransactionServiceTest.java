@@ -1,6 +1,7 @@
 package com.finance.FinanceApp;
 
 import com.finance.FinanceApp.Category.Category;
+import com.finance.FinanceApp.Category.CategoryRepository;
 import com.finance.FinanceApp.Category.CategoryType;
 import com.finance.FinanceApp.Transaction.Transaction;
 import com.finance.FinanceApp.Transaction.TransactionRepository;
@@ -29,26 +30,33 @@ public class TransactionServiceTest {
     @Mock
     TransactionRepository transactionRepository;
 
+    @Mock
+    CategoryRepository categoryRepository;
+
     @Test
     void TransactionServiceConstructor(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         assertNotNull(service);
     }
 
     @Test
     void TransactionServiceInvalidConstructor(){
         assertThrows(IllegalArgumentException.class,
-                () -> new TransactionService(null));
+                () -> new TransactionService(null, categoryRepository));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TransactionService(transactionRepository, null));
     }
 
     @Test
     void createTransactionValidData(){
         LocalDateTime now = LocalDateTime.now();
         BigDecimal amount = new BigDecimal("100.50");
-        Category c = new Category();
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
-        service.createTransaction("Test", amount, now, c);
+        Category category = new Category();
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+
+        service.createTransaction("Test", amount, now, 1L);
         ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
 
         verify(transactionRepository).save(captor.capture());
@@ -58,7 +66,7 @@ public class TransactionServiceTest {
         assertEquals("Test", saved.getTitle());
         assertEquals(amount, saved.getAmount());
         assertEquals(now, saved.getDate());
-        assertEquals(c, saved.getCategory());
+        assertEquals(category, saved.getCategory());
     }
 
     @Test
@@ -66,38 +74,54 @@ public class TransactionServiceTest {
         LocalDateTime now = LocalDateTime.now();
         BigDecimal amount = new BigDecimal("100.50");
         Category c = new Category();
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         //String null
         assertThrows(IllegalArgumentException.class,
-                () -> service.createTransaction(null, amount, now, c));
+                () -> service.createTransaction(null, amount, now, 1L));
 
         //String blank
         assertThrows(IllegalArgumentException.class,
-                () -> service.createTransaction(" ", amount, now, c));
+                () -> service.createTransaction(" ", amount, now, 1L));
 
         //amount null
         assertThrows(IllegalArgumentException.class,
-                () -> service.createTransaction("Test", null, now, c));
+                () -> service.createTransaction("Test", null, now, 1L));
 
         //amount < 0
         assertThrows(IllegalArgumentException.class,
-                () -> service.createTransaction("Test", new BigDecimal("-1"), now, c));
+                () -> service.createTransaction("Test", new BigDecimal("-1"), now, 1L));
 
         //date null
         assertThrows(NullPointerException.class,
-                () -> service.createTransaction("Test", amount, null, c));
+                () -> service.createTransaction("Test", amount, null, 1L));
 
         //category null
         assertThrows(IllegalArgumentException.class,
                 () -> service.createTransaction("Test", amount, now, null));
 
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createTransaction("Test", amount, now, -1L));
+
         verify(transactionRepository, never()).save(any());
     }
 
     @Test
+    void createTransactionShouldThrowWhenNotFound(){
+        Long id = 1L;
+        LocalDateTime now = LocalDateTime.now();
+        when(categoryRepository.findById(id))
+                .thenReturn(Optional.empty());
+
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
+
+        assertThrows(RuntimeException.class,
+                () -> service.createTransaction("Test", new BigDecimal("10"), now, id));
+    }
+
+    @Test
     void getAllTransactionsTest(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         List<Transaction> allTransactions = service.getAllTransactions();
         verify(transactionRepository).findAll();
     }
@@ -110,7 +134,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.of(transaction));
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         Transaction result = service.getTransactionById(id);
 
@@ -124,7 +148,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.empty());
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         assertThrows(RuntimeException.class,
                 () -> service.getTransactionById(id));
@@ -132,7 +156,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTransactionByIdShouldThrowOnInvalidId() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.getTransactionById(-1L));
@@ -149,7 +173,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.of(transaction));
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         service.deleteTransaction(id);
 
@@ -163,7 +187,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.empty());
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         assertThrows(RuntimeException.class,
                 () -> service.deleteTransaction(id));
@@ -173,7 +197,7 @@ public class TransactionServiceTest {
 
     @Test
     void deleteTransactionShouldThrowOnInvalidId() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.deleteTransaction(-1L));
@@ -192,7 +216,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.of(existing));
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         service.updateTransaction(id, "New", null, null, null);
 
@@ -212,7 +236,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.of(existing));
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         service.updateTransaction(id, null, new BigDecimal("110"), null, null);
 
@@ -233,7 +257,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.of(existing));
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         service.updateTransaction(id, " ", null, newDate, null);
 
@@ -255,9 +279,11 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.of(existing));
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
+        when(categoryRepository.findById(2L)).thenReturn(Optional.of(newCategory));
+        service.updateTransaction(id, null, new BigDecimal("-1"), null, 2L);
 
-        service.updateTransaction(id, null, new BigDecimal("-1"), null, newCategory);
+
 
         assertEquals("Title", existing.getTitle()); // не изменился
         assertEquals(new BigDecimal("100"), existing.getAmount()); // не изменился
@@ -276,7 +302,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.of(existing));
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         service.updateTransaction(id, null, null, null, null);
 
@@ -290,7 +316,7 @@ public class TransactionServiceTest {
 
     @Test
     void updateTransitionShouldThrowOnInvalidId() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.updateTransaction(-1L,null, null, null, null));
@@ -306,7 +332,7 @@ public class TransactionServiceTest {
         when(transactionRepository.findById(id))
                 .thenReturn(Optional.empty());
 
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         assertThrows(RuntimeException.class,
                 () -> service.updateTransaction(id, null, null, null, null));
@@ -315,8 +341,31 @@ public class TransactionServiceTest {
     }
 
     @Test
+    void updateTransactionShouldThrowWhenCategoryNotFound(){
+        LocalDateTime now = LocalDateTime.now();
+        Category category = new Category();
+        Long id = 1L;
+        Transaction existing = new Transaction("Title", new BigDecimal("100"), now, category);
+
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.of(existing));
+        Long categoryId = 1L;
+
+        when(transactionRepository.findById(id))
+                .thenReturn(Optional.of(existing));
+
+        when(categoryRepository.findById(id))
+                .thenReturn(Optional.empty());
+
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
+
+        assertThrows(RuntimeException.class,
+                () -> service.updateTransaction(id, "Test", new BigDecimal("10"), now, categoryId));
+    }
+
+    @Test
     void getTransactionsByCategoryTest(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         Long categoryId = 1L;
         List<Transaction> allTransactions = service.getTransactionsByCategory(categoryId);
         verify(transactionRepository).findByCategory_Id(categoryId);
@@ -324,7 +373,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTransactionsByCategoryThrowsTest(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         assertThrows(IllegalArgumentException.class,
                 () -> service.getTransactionsByCategory(null));
         assertThrows(IllegalArgumentException.class,
@@ -333,7 +382,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceWithIncomeAndExpense(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         Category incomeCategory = new Category("Salary", CategoryType.INCOME);
         Category expenseCategory = new Category("Food", CategoryType.EXPENSE);
@@ -350,7 +399,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceOnlyIncome() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         Category incomeCategory = new Category("Salary", CategoryType.INCOME);
         Transaction t1 = new Transaction("Salary Payment", new BigDecimal("500"), LocalDateTime.now(), incomeCategory);
@@ -363,7 +412,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceOnlyExpense() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         Category expenseCategory = new Category("Rent", CategoryType.EXPENSE);
         Transaction t1 = new Transaction("Rent Payment", new BigDecimal("300"), LocalDateTime.now(), expenseCategory);
 
@@ -375,7 +424,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceEmptyList() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         when(transactionRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -385,7 +434,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTotalIncomeTest(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         Category incomeCategory = new Category("Salary", CategoryType.INCOME);
         Transaction t1 = new Transaction("Salary Payment", new BigDecimal("500"), LocalDateTime.now(), incomeCategory);
@@ -398,7 +447,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTotalIncomeEmptyList() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         when(transactionRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -408,7 +457,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTotalExpenseTest() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         Category expenseCategory = new Category("Rent", CategoryType.EXPENSE);
         Transaction t1 = new Transaction("Rent Payment", new BigDecimal("500"), LocalDateTime.now(), expenseCategory);
@@ -421,7 +470,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTotalExpenseEmptyList() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         when(transactionRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -431,7 +480,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceByCategoryTest(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         // Мокаем категорию
         Category incomeCategory = mock(Category.class);
         when(incomeCategory.getType()).thenReturn(CategoryType.INCOME);
@@ -452,7 +501,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceByCategoryOnlyIncome(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         // Мокаем категорию
         Category incomeCategory = mock(Category.class);
         when(incomeCategory.getType()).thenReturn(CategoryType.INCOME);
@@ -467,7 +516,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceByCategoryOnlyExpense(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         Category expenseCategory = mock(Category.class);
         when(expenseCategory.getType()).thenReturn(CategoryType.EXPENSE);
@@ -482,7 +531,7 @@ public class TransactionServiceTest {
 
     @Test
     void getBalanceByCategoryEmptyList(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         lenient().when(transactionRepository.findByCategory_Id(1L)).thenReturn(Collections.emptyList());
 
@@ -492,7 +541,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTransactionsByDateRangeInvalidStartOrEnd(){
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         LocalDateTime start = LocalDateTime.now();
         LocalDateTime end = LocalDateTime.now().plusHours(2);
 
@@ -508,7 +557,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTransactionsByDateRangeTest() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0);
         LocalDateTime end = LocalDateTime.of(2026, 1, 31, 23, 59);
 
@@ -519,7 +568,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTransactionsByTypeTest() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
         CategoryType type = CategoryType.INCOME;
 
         service.getTransactionsByType(type);
@@ -529,7 +578,7 @@ public class TransactionServiceTest {
 
     @Test
     void getTransactionsByTypeThrowsTest() {
-        TransactionService service = new TransactionService(transactionRepository);
+        TransactionService service = new TransactionService(transactionRepository, categoryRepository);
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.getTransactionsByType(null));

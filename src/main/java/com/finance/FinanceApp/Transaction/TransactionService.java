@@ -1,28 +1,35 @@
 package com.finance.FinanceApp.Transaction;
 
 import com.finance.FinanceApp.Category.Category;
+import com.finance.FinanceApp.Category.CategoryRepository;
 import com.finance.FinanceApp.Category.CategoryType;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class TransactionService {
     private final TransactionRepository transactionRepository;
+    private final CategoryRepository categoryRepository;
 
-    public TransactionService(TransactionRepository transactionRepository){
+    public TransactionService(TransactionRepository transactionRepository, CategoryRepository categoryRepository){
         if(transactionRepository == null) throw new IllegalArgumentException();
+        if(categoryRepository == null) throw new IllegalArgumentException();
         this.transactionRepository = transactionRepository;
+        this.categoryRepository = categoryRepository;
     }
 
-    public void createTransaction(String title, BigDecimal amount, LocalDateTime date, Category category){
+    public void createTransaction(String title, BigDecimal amount, LocalDateTime date, Long id){
         if(title == null || title.isBlank()) throw new IllegalArgumentException("Title must have name");
         if(amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("Amount must be positive");
         if(date == null) throw new NullPointerException("Date cannot be null");
-        if (category == null)
-            throw new IllegalArgumentException("Category cannot be null");
+        if (id == null || id < 0)
+            throw new IllegalArgumentException("CategoryId cannot be null or negative");
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
         Transaction transaction = new Transaction(title, amount, date, category);
         transactionRepository.save(transaction);
     }
@@ -54,7 +61,7 @@ public class TransactionService {
             String title,
             BigDecimal amount,
             LocalDateTime date,
-            Category category
+            Long categoryId
     ) {
         if (id == null || id < 0)
             throw new IllegalArgumentException("Invalid id");
@@ -74,7 +81,9 @@ public class TransactionService {
             transaction.setDate(date);
         }
 
-        if (category != null) {
+        if (categoryId != null) {
+            Category category = categoryRepository.findById(categoryId)
+                    .orElseThrow(()-> new RuntimeException("Category not found"));
             transaction.setCategory(category);
         }
 
