@@ -1,9 +1,8 @@
 package com.finance.FinanceApp.Transaction;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -11,6 +10,16 @@ import java.util.List;
 @RequestMapping("/api/transactions")
 public class TransactionsController {
     private final TransactionService transactionService;
+
+    private TransactionResponseDto mapToDto(Transaction t){
+        return new TransactionResponseDto(
+                t.getId(),
+                t.getTitle(),
+                t.getAmount(),
+                t.getDate(),
+                t.getCategory().getName()
+        );
+    }
 
     public TransactionsController(TransactionService transactionService){
         if (transactionService == null)
@@ -30,5 +39,45 @@ public class TransactionsController {
         return transactionService.getTransactionById(id);
     }
 
+    @PostMapping
+    public ResponseEntity<String> createTransaction(@RequestBody TransactionDto dto) {
+        if(dto == null)
+            throw new IllegalArgumentException("DTO cannot be null");
+        transactionService.createTransaction(
+                dto.getTitle(),
+                dto.getAmount(),
+                dto.getDate(),
+                dto.getCategoryId()
+        );
+        return ResponseEntity.ok("Transaction created");
+    }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTransaction(@PathVariable Long id){
+        if (id == null || id < 0)
+            throw new IllegalArgumentException("Id cannot be null or negative");
+
+        transactionService.deleteTransaction(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> updateTransaction(@PathVariable Long id, @RequestBody TransactionDto dto){
+        if (id < 0) {
+            throw new IllegalArgumentException("Id cannot be negative");
+        }
+
+        if (dto == null) {
+            throw new IllegalArgumentException("DTO cannot be null");
+        }
+        transactionService.updateTransaction(
+                id,
+                dto.getTitle(),
+                dto.getAmount(),
+                dto.getDate(),
+                dto.getCategoryId()
+        );
+        return ResponseEntity.ok().build();
+    }
 }
