@@ -1,6 +1,8 @@
 package com.finance.FinanceApp;
 
+import com.finance.FinanceApp.Category.Category;
 import com.finance.FinanceApp.Category.CategoryRepository;
+import com.finance.FinanceApp.Category.CategoryType;
 import com.finance.FinanceApp.Transaction.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,14 +63,33 @@ public class TransactionsControllerTest {
 
     @Test
     void getTransactionByIdValid(){
-        Transaction t = new Transaction();
+        // Подготавливаем категорию
+        Category category = new Category("Food", CategoryType.EXPENSE);
+
+        // Подготавливаем Transaction
+        Transaction t = new Transaction(
+                "Test",
+                new BigDecimal("100"),
+                LocalDateTime.now(),
+                category
+        );
+
         Long id = 1L;
 
+        // Мокаем сервис
         when(transactionService.getTransactionById(id)).thenReturn(t);
 
+        // Контроллер
         TransactionsController controller = new TransactionsController(transactionService);
-        Transaction result = controller.getTransactionById(id);
-        assertEquals(t, result);
+
+        // Вызываем метод и получаем DTO
+        TransactionResponseDto result = controller.getTransactionById(id);
+
+        // Проверяем поля DTO
+        assertEquals(t.getTitle(), result.getTitle());
+        assertEquals(t.getAmount(), result.getAmount());
+        assertEquals(t.getDate(), result.getDate());
+        assertEquals(t.getCategory().getName(), result.getCategoryName());
     }
 
     @Test
@@ -146,5 +167,25 @@ public class TransactionsControllerTest {
         );
     }
 
+    @Test
+    void getTransactionByIdShouldReturnDto(){
+        Category category = new Category("Food", CategoryType.EXPENSE);
+        Transaction t = new Transaction(
+                "Test",
+                new BigDecimal("100"),
+                LocalDateTime.now(),
+                category
+        );
 
+        when(transactionService.getTransactionById(1L))
+                .thenReturn(t);
+
+        TransactionsController controller = new TransactionsController(transactionService);
+
+        TransactionResponseDto result = controller.getTransactionById(1L);
+
+        assertEquals("Test", result.getTitle());
+        assertEquals(new BigDecimal("100"), result.getAmount());
+        assertEquals(category.getName(), result.getCategoryName());
+    }
 }

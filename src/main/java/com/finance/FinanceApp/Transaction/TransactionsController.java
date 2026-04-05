@@ -33,10 +33,11 @@ public class TransactionsController {
     }
 
     @GetMapping("/{id}")
-    public Transaction getTransactionById(@PathVariable Long id) {
+    public TransactionResponseDto getTransactionById(@PathVariable Long id) {
         if (id == null || id < 0)
             throw new IllegalArgumentException("Id cannot be null or negative");
-        return transactionService.getTransactionById(id);
+        Transaction t = transactionService.getTransactionById(id);
+        return mapToDto(t);
     }
 
     @PostMapping
