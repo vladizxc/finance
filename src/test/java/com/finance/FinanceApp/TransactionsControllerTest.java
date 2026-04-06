@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -187,5 +188,88 @@ public class TransactionsControllerTest {
         assertEquals("Test", result.getTitle());
         assertEquals(new BigDecimal("100"), result.getAmount());
         assertEquals(category.getName(), result.getCategoryName());
+    }
+
+    @Test
+    void getByCategoryInvalidId(){
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.getByCategory(-1L));
+    }
+
+    @Test
+    void getByCategoryValid(){
+        Category category = new Category("Food", CategoryType.EXPENSE);
+
+        Transaction t1 = new Transaction("Salary Payment", new BigDecimal("1000"), LocalDateTime.now(), category);
+        when(transactionService.getTransactionsByCategory(1L)).thenReturn(Arrays.asList(t1));
+        assertNotNull(controller.getByCategory(1L));
+    }
+
+    @Test
+    void getBalanceTest(){
+        when(transactionService.getBalance()).thenReturn(BigDecimal.valueOf(100));
+        assertEquals(BigDecimal.valueOf(100), controller.getBalance());
+    }
+
+    @Test
+    void getTotalIncomeTest(){
+        when(transactionService.getTotalIncome()).thenReturn(BigDecimal.valueOf(100));
+        assertEquals(BigDecimal.valueOf(100), controller.getIncome());
+    }
+
+    @Test
+    void getTotalExpenseTest(){
+        when(transactionService.getTotalExpense()).thenReturn(BigDecimal.valueOf(100));
+        assertEquals(BigDecimal.valueOf(100), controller.getExpense());
+    }
+
+    @Test
+    void getByDateRangeInvalidDate(){
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = LocalDateTime.now().plusHours(10);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.getByDateRange(null, end));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.getByDateRange(start, null));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.getByDateRange(end, start));
+    }
+
+    @Test
+    void getByDateRangeValidDate(){
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = LocalDateTime.now().plusHours(10);
+
+        assertNotNull(controller.getByDateRange(start, end));
+    }
+
+    @Test
+    void getBalanceByCategoryInvalid(){
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.getBalanceByCategory(-1L));
+    }
+
+    @Test
+    void getBalanceByCategoryTest(){
+        when(transactionService.getBalanceByCategory(1L)).thenReturn(BigDecimal.valueOf(100));
+        assertEquals(BigDecimal.valueOf(100), controller.getBalanceByCategory(1L));
+    }
+
+    @Test
+    void getTransactionsByTypeInvalidData(){
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.getTransactionsByType(null));
+    }
+
+    @Test
+    void getTransactionsByTypeValidData(){
+        Category category = new Category("Food", CategoryType.EXPENSE);
+
+        Transaction t1 = new Transaction("Salary Payment", new BigDecimal("1000"), LocalDateTime.now(), category);
+        when(transactionService.getTransactionsByType(CategoryType.EXPENSE)).thenReturn(Arrays.asList(t1));
+        assertNotNull(controller.getTransactionsByType(CategoryType.EXPENSE));
     }
 }

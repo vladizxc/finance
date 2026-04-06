@@ -1,9 +1,12 @@
 package com.finance.FinanceApp.Transaction;
 
+import com.finance.FinanceApp.Category.CategoryType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -28,8 +31,11 @@ public class TransactionsController {
     }
 
     @GetMapping
-    public List<Transaction> getAllTransactions(){
-        return transactionService.getAllTransactions();
+    public List<TransactionResponseDto> getAllTransactions(){
+        return transactionService.getAllTransactions()
+                .stream()
+                .map(this::mapToDto)
+                .toList();
     }
 
     @GetMapping("/{id}")
@@ -81,4 +87,61 @@ public class TransactionsController {
         );
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/category/{categoryId}")
+    public List<TransactionResponseDto> getByCategory(@PathVariable Long categoryId){
+        if(categoryId < 0)
+            throw new IllegalArgumentException("categoryId cannot be null");
+        return transactionService.getTransactionsByCategory(categoryId)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @GetMapping("/balance")
+    public BigDecimal getBalance(){
+        return transactionService.getBalance();
+    }
+
+    @GetMapping("/income")
+    public BigDecimal getIncome(){
+        return transactionService.getTotalIncome();
+    }
+
+    @GetMapping("/expense")
+    public BigDecimal getExpense(){
+        return transactionService.getTotalExpense();
+    }
+
+    @GetMapping("/date-range")
+    public List<TransactionResponseDto> getByDateRange(
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end){
+        if (start == null || end == null)
+            throw new IllegalArgumentException("Start and end dates cannot be null");
+        if (end.isBefore(start))
+            throw new IllegalArgumentException("End date cannot be before start date");
+        return transactionService.getTransactionsByDateRange(start, end)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @GetMapping("/balance/{categoryId}")
+    public BigDecimal getBalanceByCategory(@PathVariable Long categoryId){
+        if (categoryId < 0)
+            throw new IllegalArgumentException("categoryId cannot be negative");
+        return transactionService.getBalanceByCategory(categoryId);
+    }
+
+    @GetMapping("/type/{type}")
+    public List<TransactionResponseDto> getTransactionsByType(@PathVariable CategoryType type){
+        if (type == null)
+            throw new IllegalArgumentException("type cannot be null");
+        return transactionService.getTransactionsByType(type)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
 }
