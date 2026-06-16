@@ -96,10 +96,11 @@ This project was created to practice:
 - layered architecture
 - working with relational databases (PostgreSQL)
 
-## Running the Project
+## How to run the application?
 
-1. Clone repository
-2. Configure PostgreSQL
-3. Run:
+- In the IDE: find `Application.java`, right-click project, select "Run As > Java Application"
+- From the command line: run `./mvnw spring-boot:run`
 
-mvn spring-boot:run
+## How to package the application?
+
+- Run `./mvnw clean package`. The packaged application (a JAR in `target/`) can be run with `java -jar $jarName`.
